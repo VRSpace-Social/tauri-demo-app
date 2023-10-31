@@ -1,7 +1,7 @@
 name: Build and Publish Tauri App
 
 on:
-  pull_request:
+  push:
     branches:
       - main  # replace with your primary branch if not 'main'
 
