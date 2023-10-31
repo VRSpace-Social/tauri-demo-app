@@ -9,7 +9,7 @@ jobs:
   create-release:
     permissions:
       contents: write
-    runs-on: ubuntu-latest
+    runs-on: contabo-x64
     outputs:
       release_id: ${{ steps.create-release.outputs.result }}
 
@@ -44,7 +44,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [macos-latest, ubuntu-latest, windows-latest]
+        platform: [macos-latest, contabo-x64, windows-latest]
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -71,7 +71,7 @@ jobs:
   publish-release:
     permissions:
       contents: write
-    runs-on: ubuntu-latest
+    runs-on: contabo-x64
     needs: [create-release, build-tauri]
 
     steps:
