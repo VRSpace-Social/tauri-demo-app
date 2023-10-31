@@ -24,10 +24,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-
-      - name: Install Node.js modules 
-        run: | 
-          npm install 
+      - run: npm ci
 
       - name: Install Rust stable
         uses: actions-rs/toolchain@v1.0.6
