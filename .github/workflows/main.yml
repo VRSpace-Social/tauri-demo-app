@@ -1,40 +1,66 @@
-name: Build and Publish Tauri App
+name: 'Build and Publish Tauri App'
 
 on:
   push:
     branches:
-      - main  # replace with your primary branch if not 'main'
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  build:
-    runs-on: ${{ matrix.operating-system }}
+  build-binaries:
     strategy:
+      fail-fast: false
       matrix:
-        operating-system: [ubuntu-latest, windows-latest, macos-latest]
+        platform: [macos-latest, ubuntu-latest, windows-latest]
 
+    runs-on: ${{ matrix.platform }}
     steps:
-    - name: install dependencies (ubuntu only)
-      if: matrix.platform == 'ubuntu-latest'
-      run: |
+      - uses: actions/checkout@v4
+
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: install Rust stable
+        uses: actions-rs/toolchain@v1.0.6
+        with:
+          toolchain: stable
+
+      - name: install dependencies (ubuntu only)
+        if: matrix.platform == 'ubuntu-latest'
+        run: |
           sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev libappindicator3-dev librsvg2-dev patchelf
-    
-    - name: Checkout Code
-      uses: actions/checkout@v4
+          sudo apt-get install -y libgtk-3-dev webkit2gtk-4.0 libappindicator3-dev librsvg2-dev patchelf
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'  # replace with your Node.js version
+      - uses: JonasKruckenberg/tauri-build@v1
+        id: tauri_build
 
-    - name: Install Node.js modules 
-      run: npm install  # replace with your build command
+      # The `artifacts` output can now be used by a different action to upload the artifacts
+      - uses: actions/upload-artifact@v3
+        with:
+          name: artifacts
+          path: "${{ join(fromJSON(steps.tauri_build.outputs.artifacts), '\n') }}"
 
-    - name: Build Tauri App
-      uses: JonasKruckenberg/tauri-build@tauri-build-v1.4.0
-
-    - name: Publish Artifacts
-      uses: actions/upload-artifact@v2
-      with:
-        name: Tauri App
-        path: ./src-tauri/target/release/*.exe  # replace with your file path and extension
+  publish:
+    needs: build-binaries
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      # Download the previously uploaded artifacts
+      - uses: actions/download-artifact@v3
+        id: download
+        with:
+          name: artifacts
+          path: artifacts
+      # And create a release with the artifacts attached
+      - name: 'create release'
+        uses: softprops/action-gh-release@master
+        env:
+          GITHUB_TOKEN: '${{ secrets.ACTION_TOKEN }}'
+        with:
+          draft: false
+          files: ./artifacts/**/*
