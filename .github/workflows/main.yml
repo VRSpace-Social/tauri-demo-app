@@ -20,26 +20,30 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: setup node
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - name: install Rust stable
+      - name: Install Node.js modules 
+        run: npm install  # replace with your build command
+
+      - name: Install Rust stable
         uses: actions-rs/toolchain@v1.0.6
         with:
           toolchain: stable
 
-      - name: install dependencies (ubuntu only)
+      - name: Install dependencies (ubuntu only)
         if: matrix.platform == 'ubuntu-latest'
         run: |
           sudo apt-get update
           sudo apt-get install -y libgtk-3-dev webkit2gtk-4.0 libappindicator3-dev librsvg2-dev patchelf
 
+      - name: Build Tauri App
       - uses: JonasKruckenberg/tauri-build@v1
         id: tauri_build
 
-      # The `artifacts` output can now be used by a different action to upload the artifacts
+      - name: Upload Artifacts
       - uses: actions/upload-artifact@v3
         with:
           name: artifacts
@@ -57,7 +61,7 @@ jobs:
           name: artifacts
           path: artifacts
       # And create a release with the artifacts attached
-      - name: 'create release'
+      - name: 'Create release'
         uses: softprops/action-gh-release@master
         env:
           GITHUB_TOKEN: '${{ secrets.ACTION_TOKEN }}'
