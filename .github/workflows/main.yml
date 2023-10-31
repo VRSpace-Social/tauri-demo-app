@@ -1,0 +1,34 @@
+name: Build and Publish Tauri App
+
+on:
+  pull_request:
+    branches:
+      - main  # replace with your primary branch if not 'main'
+
+jobs:
+  build:
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      matrix:
+        operating-system: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'  # replace with your Node.js version
+
+    - name: Install Node.js modules 
+      run: npm install  # replace with your build command
+
+    - name: Build Tauri App
+      uses: JonasKruckenberg/tauri-build@tauri-build-v1.4.0
+
+    - name: Publish Artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: Tauri App
+        path: ./src-tauri/target/release/*.exe  # replace with your file path and extension
